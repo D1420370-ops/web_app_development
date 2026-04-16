@@ -13,18 +13,18 @@ def create_app():
     return app
 
 def init_db():
-    from app.models.record import DB_PATH
+    from app.models.record import DB_PATH, PROJECT_ROOT
     db_dir = os.path.dirname(DB_PATH)
     if not os.path.exists(db_dir):
         os.makedirs(db_dir)
         
-    schema_path = os.path.join(db_dir, 'schema.sql')
+    schema_path = os.path.join(PROJECT_ROOT, 'database', 'schema.sql')
     if os.path.exists(schema_path):
         conn = sqlite3.connect(DB_PATH)
         with open(schema_path, 'r', encoding='utf-8') as f:
             conn.executescript(f.read())
         conn.commit()
         conn.close()
-        print("Database initialized successfully.")
+        print("Database initialized successfully at " + DB_PATH)
     else:
         print(f"Error: Schema file not found at {schema_path}")
