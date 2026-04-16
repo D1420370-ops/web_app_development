@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row mb-5">
+    <div class="col-12 text-center mb-4">
+        <h5 class="text-white-50">本月可用結餘 ({{ current_month }})</h5>
+        <h1 class="balance-text mt-2">$ {{ "{:,}".format(summary['balance']) }}</h1>
+    </div>
+    
+    <div class="col-md-6 mb-3">
+        <div class="glass-card text-center h-100">
+            <h6 class="text-white-50">總收入</h6>
+            <h3 class="text-income"><i class="fa-solid fa-arrow-trend-up me-2"></i>$ {{ "{:,}".format(summary['income']) }}</h3>
+            <a href="{{ url_for('records.new_income') }}" class="btn btn-glass mt-3 w-100"><i class="fa-solid fa-plus me-1"></i>新增收入</a>
+        </div>
+    </div>
+    <div class="col-md-6 mb-3">
+        <div class="glass-card text-center h-100">
+            <h6 class="text-white-50">總支出</h6>
+            <h3 class="text-expense"><i class="fa-solid fa-arrow-trend-down me-2"></i>$ {{ "{:,}".format(summary['expense']) }}</h3>
+            <a href="{{ url_for('records.new_expense') }}" class="btn btn-glass mt-3 w-100"><i class="fa-solid fa-minus me-1"></i>新增支出</a>
+        </div>
+    </div>
+</div>
+
+<div class="glass-card">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0"><i class="fa-solid fa-clock-rotate-left me-2"></i>近期紀錄</h4>
+        <form class="d-flex align-items-center" method="GET" action="{{ url_for('main.index') }}">
+            <input type="month" class="form-control me-2 rounded-pill" name="month" value="{{ current_month }}" onchange="this.form.submit()">
+        </form>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="table table-hover table-glass table-borderless align-middle">
+            <thead class="text-white-50 border-bottom border-secondary">
+                <tr>
+                    <th scope="col">日期</th>
+                    <th scope="col">類別</th>
+                    <th scope="col">類型</th>
+                    <th scope="col">金額</th>
+                    <th scope="col" class="w-25">備註</th>
+                    <th scope="col" class="text-end">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in records %}
+                <tr>
+                    <td><span class="badge bg-secondary rounded-pill fw-light">{{ r.record_date }}</span></td>
+                    <td><i class="fa-solid fa-tag me-2 text-white-50"></i>{{ r.category }}</td>
+                    <td>
+                        {% if r.type == 'income' %}
+                        <span class="text-income"><i class="fa-solid fa-circle-arrow-up me-1"></i>收入</span>
+                        {% else %}
+                        <span class="text-expense"><i class="fa-solid fa-circle-arrow-down me-1"></i>支出</span>
+                        {% endif %}
+                    </td>
+                    <td class="{{ 'text-income' if r.type == 'income' else 'text-expense' }} fw-bold text-nowrap">
+                        {{ "$" if r.type == 'income' else "-$" }} {{ "{:,}".format(r.amount) }}
+                    </td>
+                    <td class="text-white-50 small text-break">{{ r.note }}</td>
+                    <td class="text-end text-nowrap">
+                        <form action="{{ url_for('records.delete_record', id=r.id) }}" method="POST" class="d-inline" onsubmit="return confirm('確定要刪除這筆紀錄嗎？此動作無法復原！');">
+                            <button type="submit" class="btn btn-sm btn-glass danger rounded-circle" aria-label="刪除"><i class="fa-solid fa-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center py-5 text-white-50">
+                        <i class="fa-regular fa-folder-open mb-3 fs-1 opacity-50"></i><br>
+                        這個月份還沒有任何紀錄喔！
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

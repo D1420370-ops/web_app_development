@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 mt-4">
+        <div class="glass-card">
+            <h3 class="mb-4 text-expense"><i class="fa-solid fa-basket-shopping me-2"></i>紀錄一筆支出</h3>
+            <form method="POST" action="{{ url_for('records.create_expense') }}">
+                <div class="mb-4">
+                    <label class="form-label text-white-50"><i class="fa-solid fa-store me-2"></i>開銷類別</label>
+                    <select name="category" class="form-select border-secondary border-opacity-50" required>
+                        <option value="" disabled selected>請選擇花費類別...</option>
+                        <option value="餐飲食品">🍽️ 餐飲食品</option>
+                        <option value="交通出行">🚗 交通出行</option>
+                        <option value="服飾美容">👕 服飾美容</option>
+                        <option value="居住水電">🏠 居住水電</option>
+                        <option value="休閒娛樂">🎮 休閒娛樂</option>
+                        <option value="學習進修">📖 學習進修</option>
+                        <option value="醫療保健">💊 醫療保健</option>
+                        <option value="其他">📌 其他</option>
+                    </select>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="form-label text-white-50"><i class="fa-solid fa-sack-dollar me-2"></i>支出金額</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent text-white border-secondary border-opacity-50">$</span>
+                        <input type="number" name="amount" class="form-control form-control-lg border-secondary border-opacity-50 fw-bold" placeholder="0" required min="1">
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="form-label text-white-50"><i class="fa-solid fa-calendar me-2"></i>消費日期</label>
+                    <input type="date" name="record_date" class="form-control border-secondary border-opacity-50 text-white" required>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="form-label text-white-50"><i class="fa-solid fa-comment-dots me-2"></i>備註 (選填)</label>
+                    <textarea name="note" class="form-control border-secondary border-opacity-50 text-white" rows="2" placeholder="記下這筆開銷的細節..."></textarea>
+                </div>
+                
+                <div class="d-grid gap-3 mt-5 pb-2">
+                    <button type="submit" class="btn btn-glass danger py-2 fs-5"><i class="fa-solid fa-check me-2"></i>儲存支出</button>
+                    <a href="{{ url_for('main.index') }}" class="btn btn-glass py-2 text-white-50"><i class="fa-solid fa-arrow-left me-2"></i>取消返回</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+    document.querySelector('input[type="date"]').valueAsDate = new Date();
+</script>
+{% endblock %}

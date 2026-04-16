@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col-md-6">
+        <h2 class="mb-2"><i class="fa-solid fa-chart-pie me-2" style="color: #00f2fe;"></i>財務數據分析</h2>
+    </div>
+    <div class="col-md-6 text-md-end mt-2 mt-md-0 d-flex justify-content-md-end align-items-center">
+        <span class="me-3 text-white-50 fw-bold small">指定月份：</span>
+        <form method="GET" action="{{ url_for('main.statistics') }}">
+            <input type="month" class="form-control rounded-pill bg-transparent text-white" style="border: 1px solid rgba(255,255,255,0.3);" name="month" value="{{ current_month }}" onchange="this.form.submit()">
+        </form>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Expense Chart -->
+    <div class="col-lg-6 mb-4">
+        <div class="glass-card h-100 d-flex flex-column">
+            <h5 class="text-center mb-4 text-expense fw-bold tracking-wide">
+                <i class="fa-solid fa-fire-flame-curved me-2"></i>支出類別佔比
+            </h5>
+            <div class="flex-grow-1" style="position: relative; min-height:300px; width:100%">
+                <canvas id="expenseChart"></canvas>
+            </div>
+            {% if not expense_categories %}
+                <div class="text-center mt-3 text-white-50 pb-4">
+                    <i class="fa-solid fa-ghost fs-3 mb-2 opacity-50"></i><br>
+                    本月份無支出資料喔！
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Income Chart -->
+    <div class="col-lg-6 mb-4">
+        <div class="glass-card h-100 d-flex flex-column">
+            <h5 class="text-center mb-4 text-income fw-bold tracking-wide">
+                <i class="fa-solid fa-money-bill-trend-up me-2"></i>收入來源佔比
+            </h5>
+            <div class="flex-grow-1" style="position: relative; min-height:300px; width:100%">
+                <canvas id="incomeChart"></canvas>
+            </div>
+            {% if not income_categories %}
+                <div class="text-center mt-3 text-white-50 pb-4">
+                    <i class="fa-solid fa-wind fs-3 mb-2 opacity-50"></i><br>
+                    本月份無收入資料喔！
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Configuration for general charts aesthetics matching our dark glassmorphism ui
+    Chart.defaults.color = 'rgba(255, 255, 255, 0.8)';
+    Chart.defaults.font.family = "'Outfit', sans-serif";
+    Chart.defaults.font.size = 14;
+    
+    // Parse json mapped payloads safely
+    const expenseData = JSON.parse('{{ expense_categories | tojson | safe }}');
+    const incomeData = JSON.parse('{{ income_categories | tojson | safe }}');
+    
+    // Helper to generate stunning vibrant colors
+    const generateColors = (count, startHue, hueRange, saturation, lightness) => {
+        const colors = [];
+        for (let i = 0; i < count; i++) {
+            const hue = startHue + (i * (hueRange / Math.max(1, count - 1)));
+            colors.push(`hsl(${hue % 360}, ${saturation}%, ${lightness}%)`);
+        }
+        return colors;
+    };
+    
+    const chartSettings = {
+        type: 'doughnut',
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true,
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                    padding: 12,
+                    cornerRadius: 10,
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.label || '';
+                            if (label) { label += ': '; }
+                            if (context.parsed !== null) {
+                                label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed).replace('$', '$ ');
+                            }
+                            return label;
+                        }
+                    }
+                }
+            },
+            cutout: '75%',
+            borderWidth: 0,
+            hoverOffset: 15
+        }
+    };
+    
+    // Render Expenses Chart
+    const expenseCanvas = document.getElementById('expenseChart');
+    if (Object.keys(expenseData).length > 0) {
+        new Chart(expenseCanvas.getContext('2d'), {
+            ...chartSettings,
+            data: {
+                labels: Object.keys(expenseData),
+                datasets: [{
+                    data: Object.values(expenseData),
+                    // Start hue at deep pink/red moving towards orange
+                    backgroundColor: generateColors(Object.keys(expenseData).length, 340, 50, 95, 60),
+                }]
+            }
+        });
+    }
+    
+    // Render Incomes Chart
+    const incomeCanvas = document.getElementById('incomeChart');
+    if (Object.keys(incomeData).length > 0) {
+        new Chart(incomeCanvas.getContext('2d'), {
+            ...chartSettings,
+            data: {
+                labels: Object.keys(incomeData),
+                datasets: [{
+                    data: Object.values(incomeData),
+                    // Start hue at cyan moving towards deep blue/green
+                    backgroundColor: generateColors(Object.keys(incomeData).length, 160, 60, 95, 45),
+                }]
+            }
+        });
+    }
+</script>
+{% endblock %}
