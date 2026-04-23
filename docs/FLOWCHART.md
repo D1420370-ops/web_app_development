@@ -1,60 +1,79 @@
-# 系統流程圖文件 (FLOWCHART)
+# 任務管理系統 - 流程圖文件 (Flowchart)
 
-## 1. 使用者流程圖（User Flow）
+這份文件透過視覺化的流程圖展示使用者在系統中的操作路徑，以及在執行核心功能（例如新增任務）時，系統背後的元件如何互動與傳遞資料。
 
-此流程圖描述使用者從開啟網站開始，能如何在「個人記帳簿」系統中操作各項功能。
+## 1. 使用者流程圖 (User Flow)
+
+這個流程圖展示了使用者（學生）進入系統後可以進行的主要操作步驟。
 
 ```mermaid
 flowchart LR
-    A([使用者開啟網頁]) --> B[首頁 - 當月結餘與近期紀錄]
-    B --> C{選擇操作}
+    A([使用者開啟網頁]) --> B[首頁 - 任務列表]
+    B --> C{要執行什麼操作？}
     
-    C -->|點擊新增支出| D[填寫支出表單]
-    D -->|送出表單| E[系統儲存支出紀錄]
-    E -->|成功後返回| B
+    C -->|想記錄新任務| D[點擊「新增任務」]
+    D --> E[進入填寫表單頁面]
+    E --> F[送出表單]
+    F -->|成功| B
     
-    C -->|點擊新增收入| F[填寫收入表單]
-    F -->|送出表單| G[系統儲存收入紀錄]
-    G -->|成功後返回| B
-
-    C -->|點擊查看統計| H[統計圖表頁面]
-    H -->|檢視支出與收入比例| I[切換圓餅圖/圖表]
-    I -->|返回| B
+    C -->|想更改內容| G[點擊特定任務的「編輯」]
+    G --> H[進入修改表單頁面]
+    H --> I[儲存修改]
+    I -->|成功| B
+    
+    C -->|任務已完成| J[點擊「標記完成 / 未完成」]
+    J --> B
+    
+    C -->|想移除任務| K[點擊「刪除」]
+    K --> L{確認刪除？}
+    L -->|是| M[刪除任務]
+    M -->|成功| B
+    L -->|否| B
 ```
 
-## 2. 系統序列圖（Sequence Diagram）
+## 2. 系統序列圖 (Sequence Diagram)
 
-此序列圖描述「使用者點擊新增紀錄（以新增支出為例）」到「資料成功寫入資料庫」的底層運作流程。
+這個序列圖以「新增任務」為例，展示了從使用者填寫表單、送出到資料寫入資料庫的完整技術流程。
 
 ```mermaid
 sequenceDiagram
     actor User as 使用者
-    participant Browser as 瀏覽器 (HTML/CSS/JS)
-    participant Flask as Flask (後端 Controller)
+    participant Browser as 瀏覽器 (HTML/JS)
+    participant Flask as Flask 路由 (Controller)
+    participant Model as Task Model (Model)
     participant DB as SQLite 資料庫
     
-    User->>Browser: 填寫支出表單金額與類別並點擊「送出」
-    Browser->>Flask: POST /expense (傳送表單 payload)
-    Flask->>Flask: 驗證表單資料格式與安全性
-    Flask->>DB: INSERT INTO records (寫入資料表)
-    DB-->>Flask: 回傳寫入成功
-    Flask-->>Browser: HTTP 302 重導向到列表頁 (首頁 /)
-    Browser->>User: 顯示更新後的結餘與最新紀錄清單
+    User->>Browser: 填寫「新增任務」表單並點擊送出
+    Browser->>Flask: POST /tasks/create (攜帶表單資料)
+    Flask->>Flask: 驗證資料是否完整 (例如標題必填)
+    alt 資料無效
+        Flask-->>Browser: 重新渲染表單頁並顯示錯誤提示
+    else 資料有效
+        Flask->>Model: 呼叫 create_task(title, description, due_date)
+        Model->>DB: 執行 SQL INSERT INTO tasks ...
+        DB-->>Model: 回傳寫入成功及新建立的 ID
+        Model-->>Flask: 回傳成功狀態
+        Flask-->>Browser: 重導向 (Redirect) 至首頁任務列表
+        Browser->>Flask: GET / (請求首頁)
+        Flask->>Model: 呼叫 get_all_tasks()
+        Model->>DB: 執行 SQL SELECT * FROM tasks ...
+        DB-->>Model: 回傳任務資料集
+        Model-->>Flask: 回傳 Python 串列
+        Flask->>Browser: 渲染 index.html 並回傳 HTML
+        Browser-->>User: 顯示更新後的任務列表
+    end
 ```
 
 ## 3. 功能清單對照表
 
-以下整理了系統主要功能、預估的 URL 路徑與 HTTP 方法對照：
+以下為目前規劃的系統功能與其對應的 URL 路徑及 HTTP 方法：
 
 | 功能名稱 | URL 路徑 | HTTP 方法 | 說明 |
-| :--- | :--- | :--- | :--- |
-| 首頁 (儀表板) | `/` | GET | 顯示當月總收入、總支出、結餘與近期清單 |
-| 新增支出頁面 | `/expense/new` | GET | 顯示新增支出的填答表單 |
-| 送出新增支出 | `/expense` | POST | 接收支出表單資料並寫入資料庫 |
-| 新增收入頁面 | `/income/new` | GET | 顯示新增收入的填答表單 |
-| 送出新增收入 | `/income` | POST | 接收收入表單資料並寫入資料庫 |
-| 統計圖表頁面 | `/statistics` | GET | 顯示每月支出的分類圓餅圖等數據分析 |
-| 刪除指定項目 | `/record/<int:id>/delete` | POST | 在首頁或清單中刪除特定的收支紀錄 |
-
----
-> **備註**：由於目前系統找不到 `docs/ARCHITECTURE.md` 文件，因此本流程圖是根據已有的 `docs/PRD.md` 中的功能需求及「使用 Flask + SQLite」的技術設定來產出的。這符合系統的預期規劃。
+|---|---|---|---|
+| 檢視任務清單 (首頁) | `/` 或 `/tasks` | GET | 取得並顯示所有任務清單（依到期日排序），即將到期者高亮顯示 |
+| 顯示新增表單頁面 | `/tasks/create` | GET | 顯示空白的新增任務表單讓使用者填寫 |
+| 處理新增任務請求 | `/tasks/create` | POST | 接收表單傳來的資料並寫入資料庫 |
+| 顯示編輯表單頁面 | `/tasks/<int:id>/edit` | GET | 根據任務 ID，查詢該任務資料並填入表單中顯示 |
+| 處理編輯任務請求 | `/tasks/<int:id>/edit` | POST | 接收更新後的表單資料並覆寫資料庫原有紀錄 |
+| 切換任務完成狀態 | `/tasks/<int:id>/toggle` | POST | 點擊時切換該任務的完成 (completed) 狀態 |
+| 刪除任務 | `/tasks/<int:id>/delete` | POST | 根據任務 ID 刪除該筆特定任務 |
