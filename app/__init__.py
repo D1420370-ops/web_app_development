@@ -1,30 +1,36 @@
 import os
 import sqlite3
 from flask import Flask
-from .routes import register_blueprints
 
 def create_app():
-    app = Flask(__name__)
-    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'default-dev-key')
+    """初始化並設定 Flask 應用程式"""
+    # 指定 template 和 static 資料夾的相對位置
+    app = Flask(__name__, template_folder='templates', static_folder='static')
     
-    # 初始化 Blueprints
-    register_blueprints(app)
+    # 載入設定（這裡示範簡單的設定方式，實務上可透過 config.py 或 .env）
+    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key')
+    
+    # 確保 instance 目錄存在（用於存放 SQLite 資料庫檔案）
+    os.makedirs(os.path.join(app.root_path, '..', 'instance'), exist_ok=True)
+    
+    # 註冊路由 (Blueprints)
+    from app.routes.task_routes import task_bp
+    app.register_blueprint(task_bp)
     
     return app
 
 def init_db():
-    from app.models.record import DB_PATH, PROJECT_ROOT
-    db_dir = os.path.dirname(DB_PATH)
-    if not os.path.exists(db_dir):
-        os.makedirs(db_dir)
-        
-    schema_path = os.path.join(PROJECT_ROOT, 'database', 'schema.sql')
-    if os.path.exists(schema_path):
-        conn = sqlite3.connect(DB_PATH)
+    """根據 schema.sql 初始化資料庫"""
+    # 取得專案根目錄
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    db_path = os.path.join(base_dir, 'instance', 'database.db')
+    schema_path = os.path.join(base_dir, 'database', 'schema.sql')
+    
+    # 確保 instance 資料夾存在
+    os.makedirs(os.path.dirname(db_path), exist_ok=True)
+    
+    # 執行 SQL 建表語法
+    with sqlite3.connect(db_path) as conn:
         with open(schema_path, 'r', encoding='utf-8') as f:
             conn.executescript(f.read())
-        conn.commit()
-        conn.close()
-        print("Database initialized successfully at " + DB_PATH)
-    else:
-        print(f"Error: Schema file not found at {schema_path}")
+    print(f"資料庫初始化完成！已建立於：{db_path}")
