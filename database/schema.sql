@@ -1,9 +1,8 @@
-CREATE TABLE IF NOT EXISTS records (
+CREATE TABLE IF NOT EXISTS tasks (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    type TEXT NOT NULL,          -- 'income' or 'expense'
-    amount INTEGER NOT NULL,
-    category TEXT NOT NULL,
-    record_date TEXT NOT NULL,   -- 儲存為 'YYYY-MM-DD' 格式
-    note TEXT,
+    title TEXT NOT NULL,
+    description TEXT,
+    due_date TEXT,
+    completed INTEGER DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );

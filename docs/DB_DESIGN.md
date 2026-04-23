@@ -1,37 +1,42 @@
-# DB Design 文件 — 個人記帳簿
+# 資料庫設計文件 (DB Design)
 
-## 1. 實體關係圖 (ER Diagram)
+這份文件記錄了任務管理系統所使用的資料庫 Schema 設計，包含 ER 圖、資料表詳細說明，以及相關的實作細節。本系統採用 SQLite 作為資料庫。
+
+## 1. ER 圖 (實體關係圖)
 
 ```mermaid
 erDiagram
-    RECORD {
-        int id PK
-        string type
-        int amount
-        string category
-        date record_date
-        string note
-        datetime created_at
+    TASKS {
+        INTEGER id PK "主鍵，自動遞增"
+        TEXT title "任務標題"
+        TEXT description "任務描述"
+        TEXT due_date "到期日 (ISO 格式)"
+        INTEGER completed "是否完成 (0=未完成, 1=已完成)"
+        DATETIME created_at "建立時間"
     }
 ```
 
+> **說明**：由於目前系統針對個人任務管理為主（MVP 範圍），並未實作多使用者或分類標籤等功能，因此資料庫架構非常單純，僅包含單一資料表 `tasks`，無其他外部關聯。
+
 ## 2. 資料表詳細說明
 
-### `records` (收支紀錄)
-統一儲存收入與支出的資料表。透過 `type` 欄位區分是收入 (income) 還是支出 (expense)，如此在首頁查詢近期紀錄及計算總額時會更方便。
+### `tasks` (任務表)
 
-| 欄位名稱 | 型別 | 必填 | 說明 |
-| :--- | :--- | :--- | :--- |
-| `id` | INTEGER | 是 | Primary Key, 自動遞增的唯一識別碼 |
-| `type` | TEXT | 是 | 紀錄類型，值為 `'income'` 或 `'expense'` |
-| `amount` | INTEGER | 是 | 金額 (整數型別) |
-| `category` | TEXT | 是 | 類別名稱 (如：餐飲、交通、薪水等) |
-| `record_date`| TEXT | 是 | 交易日期，以 `YYYY-MM-DD` 格式儲存 |
-| `note` | TEXT | 否 | 備註說明 |
-| `created_at` | DATETIME | 是 | 資料建立時間，預設為 `CURRENT_TIMESTAMP` |
+負責儲存使用者建立的所有待辦事項資料。
+
+| 欄位名稱 | 資料型別 | 是否必填 | 預設值 | 說明 |
+|---|---|---|---|---|
+| `id` | INTEGER | 是 | 自動產生 | Primary Key，唯一識別碼 |
+| `title` | TEXT | 是 | 無 | 任務的標題 |
+| `description` | TEXT | 否 | NULL | 任務的詳細說明 |
+| `due_date` | TEXT | 否 | NULL | 任務的到期日與時間 (建議格式為 `YYYY-MM-DD HH:MM`) |
+| `completed` | INTEGER | 是 | `0` | 表示任務完成狀態，以 SQLite 慣用的 `0` (False) 或 `1` (True) 儲存 |
+| `created_at` | DATETIME | 是 | `CURRENT_TIMESTAMP` | 紀錄資料建立的時間點 |
 
 ## 3. SQL 建表語法
-存放於 `database/schema.sql` 中。
+
+建表語法請參考專案目錄下的 `database/schema.sql` 檔案。
 
 ## 4. Python Model 程式碼
-因為沒有找到 `ARCHITECTURE.md` 指定使用 SQLAlchemy，這裡將預設使用內建的 `sqlite3` 實作。Model 程式碼存放於 `app/models/record.py` 中。
+
+資料庫互動邏輯已封裝於 `app/models/task_model.py` 中，使用 Python 內建的 `sqlite3` 模組，並提供完整的 CRUD（建立、讀取、更新、刪除）以及狀態切換方法。

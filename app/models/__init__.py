@@ -1,3 +1,2 @@
-from .record import Record
-
-__all__ = ['Record']
+# Initialization for models package
+from .task_model import TaskModel
